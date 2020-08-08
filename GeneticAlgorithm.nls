@@ -1,0 +1,536 @@
+;; Individuals = possible solutions
+extensions [ rnd ] 
+
+breed [AI:individuals AI:individual]
+
+AI:individuals-own [
+  content  ; Where the representation of the solution is stored in the individual
+  fitness  ; Where the fitness of the individual is stored
+  prob
+  rank
+]
+
+globals[ 
+  iteraciones
+]
+;---------------------------------------------------------------------------------
+
+;--------------- Procedures to be customized -------------------------------------
+
+; They depend on the representation chosen for the problem in the DNA of the 
+; individuals.
+
+; to AI:Initial-Population [#population]
+;   Creates the initial generation of AI:individuals
+
+; to AI:Compute-fitness
+;   Individual report to compute its fitness
+
+; to-report AI:Crossover [c1 c2]
+;   Crossover procedure. It takes content from two parents and returns a list with 
+;   two contents.
+;   When content is a list (as in DNA case) it uses a random cut-point to
+;   cut both contents and mix them:
+;        a1|a2, b1|b2, where long(ai)=long(bi)
+;   and report: a1|b2, b1|a2
+
+; to AI:mutate [#mutation-ratio]
+;   Mutation procedure. Individual procedure. Random mutation of units of the 
+;   content.
+
+; to AI:ExternalUpdate
+;   Auxiliary procedure to be executed in every iteration of the main loop.
+;   Usually to show or update some information.
+
+;------------------------- Algorithm Procedures ----------------------------------
+
+; Main procedure. Parameters:
+;  #num-iters       : Number of iterations of the algorithm
+;  #population      : Population (number) of individuals to take care of
+;  #crossover-ratio : % of crossovers that will be made in every iteration
+;  #mutation-ratio  ; Probability of mutation in every unit of DNA
+
+to-report AI:GeneticAlgorithm [#num-iters #population #crossover-ratio #mutation-ratio]
+  set iteraciones 0
+  repeat #num-iters [
+    AI:Create-next-generation #population #crossover-ratio #mutation-ratio
+    AI:ExternalUpdate
+    
+    set iteraciones iteraciones + 1 
+  ]
+  report max-one-of AI:individuals [fitness]
+end
+
+;-------------------------------------------------- metodos-de-seleccion --------------------------------------------------
+to-report AI:Select-elitist [#old-generation]
+
+    let father1 max-one-of (n-of 3 #old-generation) [fitness] ;Original
+    let father2 max-one-of (n-of 3 #old-generation) [fitness] ;Original
+  
+  report (list father1 father2)
+end
+
+to-report AI:Select-natural [#old-generation]
+  let fitness-mayor [fitness] of (max-one-of #old-generation [fitness])
+  let fitness-menor [fitness] of (min-one-of #old-generation [fitness])
+  let aux[]
+  
+  let rango fitness-mayor - ((fitness-mayor - fitness-menor) / 10) 
+  
+  ask #old-generation[
+    if(fitness >= rango)[
+      set aux lput self aux
+    ]
+  ]
+  
+  report (list (one-of aux) (one-of aux))
+  
+end
+
+to-report AI:Select-ruleta [#old-generation]
+
+  let fitness-total sum [fitness] of #old-generation
+
+  ask #old-generation[
+    set prob fitness / fitness-total
+  ]
+  
+  let father1 rnd:weighted-one-of #old-generation [prob]
+  let father2 rnd:weighted-one-of #old-generation [prob]
+  
+  report list father1 father2
+end
+
+to-report AI:Select-rango [#old-generation]
+  let pop count #old-generation
+  
+  ask #old-generation[
+    set rank 0
+  ]
+  
+  let i 1 
+  while[i < pop][
+    let maxFit max-one-of (#old-generation with [rank = 0]) [fitness]
+    ask maxFit[
+      set rank i
+    ]
+    set i i + 1
+  ]
+  
+  let sumRank pop * (pop + 1) / 2
+  ask #old-generation[
+    set prob rank / sumRank
+  ]
+  
+  let father1 rnd:weighted-one-of #old-generation [prob]
+  let father2 rnd:weighted-one-of #old-generation [prob]
+  
+  report list father1 father2
+end
+
+;-------------------------------------------------- metodos-de-cruzamiento --------------------------------------------------
+to-report AI:Crossover-single-point [c1 c2] ;single-point crossover
+
+  let n1 random N
+  
+  let p1 sublist c1 0 n1
+  let p2 sublist c1 n1 N
+  
+  let p3 sublist c2 0 n1
+  let p4 sublist c2 n1 N
+  
+  report (list (sentence p1 p4) (sentence p3 p2))
+  
+end
+to-report AI:Crossover-two-point [c1 c2] ;two-point crossover
+
+  let n1 random N
+  let n2 random N
+  
+  let aux sort (list n1 n2)
+  let W1 item 0 aux
+  let W2 item 1 aux
+  
+  let l1 sublist c1 0 W1
+  let l2 sublist c2 0 W1 
+  
+  let l3 sublist c1 W1 W2
+  let l4 sublist c2 W1 W2
+  
+  let l5 sublist c1 W2 N
+  let l6 sublist c2 W2 N
+  
+  let children1 (sentence l1 l4 l5)
+  let children2 (sentence l2 l3 l6)
+  
+  report (list children1 children2)
+  
+end 
+to-report AI:Crossover-uniform [c1 c2] 
+  let i 0
+  let children1 sublist c1 0 length c1
+  let children2 sublist c2 0 length c2
+  while[i < N][
+     let ran random 1
+     let ic1 item i children1
+     let ic2 item i children2
+     if(ic1 != ic2 and ran = 1)[
+       set children1 replace-item i children1 ic2
+       set children2 replace-item i children2 ic1
+     ]
+     set i i + 1
+    ]
+  report (list children1 children2)
+end
+to-report AI:Crossover-uniform-media [c1 c2]
+  set c1 remove-duplicates c1
+  set c2 remove-duplicates c2
+  let numCam floor ((AI:distance c1 c2) / 2)
+  let i 0
+  let listaC1[]
+  let listaC2[]
+  let pos[]
+  while[i < numCam][
+    set listaC1 lput one-of c1 listaC1
+    set i i + 1
+  ]
+  
+  set i 0
+  while[i < length listaC1][
+    set pos lput (position item i listaC1 c1) pos
+    set i i + 1
+  ]
+  
+  set i 0
+  while[i < length pos][
+    set listaC2 lput (item i pos) listaC2
+    set i i + 1
+  ]
+  
+  let children1[]
+  let children2[]
+  set children1 (sentence children1 c1)
+  set children2 (sentence children2 c2)
+  
+  set i 0 
+  while[i < length pos][
+    set children1 insert-item (item i pos) children1 (item i listaC2)
+    set children2 insert-item (item i pos) children2 (item i listaC1)
+    set i i + 1
+  ]
+  
+  report (list children1 children2)
+  
+  
+end
+to-report AI:Crossover-opt2 [c1 c2] ;opt2
+
+  let resG2 shuffle n-values N [i -> i]
+
+  let fa true
+  let fb true
+
+  let t random N
+
+  let x position t c1
+  let y position t c2
+
+  if x = false or y = false [report (list resG2 resG2)]
+  
+  let resG (list t)
+
+  while [fa or fb][
+    set x ((x - 1) mod N)
+    set y ((y + 1) mod N)
+
+    if fa [
+      let ax (item x c1)
+      ifelse ((member? ax resG) = false)
+      [ set resG (sentence ax resG) ][ set fa false ]
+    ]
+
+    if fb [
+      let by (item y c2)
+      ifelse ((member? by resG) = false)
+      [ set resG (sentence resG by) ][ set fb false ]
+    ]
+
+    ]
+
+    let lengthResG length resG
+    let lengthC1 length c1
+
+    if lengthResG < lengthC1 [
+
+      let listaAux n-values N [ i -> i ]
+
+      let agregar filter  [i -> not member? i ResG ] listaAux
+
+      set ResG  sentence ResG (shuffle agregar)
+    ]
+
+ report (list resG resG) ;padre1: es el mejor de los individuos padre2: mismas caracteristicas que padre1
+ ;report (list resG resG2) ;padre1: es el mejor de los individuos padre2: individuo aleatorio
+
+
+end
+;-------------------------------------------------- metodos-de-mutacion --------------------------------------------------
+to AI:mutate-flip  [#mutation-ratio]
+  set content map [ ?1 -> ifelse-value (random-float 100.0 < #mutation-ratio) [random N] [?1] ] content
+end
+to AI:mutate-opt2  [#mutation-ratio]
+  
+    if(random-float 100.0 < #mutation-ratio)[ 
+    
+    let nuevo-fitness 0
+    let aux-content content
+    let indexi 0
+    let indexj 0
+    
+    foreach content[ i ->
+      foreach content[ j ->
+         
+        set indexi (position i content)
+        set indexj (position j content)
+        
+        let v1 (item indexi content)
+        let v2 (item indexj content)
+
+        set aux-content replace-item indexi aux-content v2
+        set aux-content replace-item indexj aux-content v1
+        
+        set nuevo-fitness (-1 * (todos-weight aux-content))
+
+        if nuevo-fitness > fitness[
+          
+          set content aux-content
+          set fitness nuevo-fitness
+          
+        ]
+        
+        set aux-content content
+       
+      ]  
+    ]    
+  ]
+  
+end
+to AI:mutate-two-flip[#mutation-ratio]
+  
+  if(random-float 100.0 < #mutation-ratio)[ 
+    let n1 random N 
+    let n2 floor ((n1 + N / 2) mod N)
+    
+    let i1 item n1 content
+    let i2 item n2 content
+    
+    set content replace-item n1 content i2
+    set content replace-item n2 content i1
+  ]
+end
+to AI:mutate-scramble[#mutation-ratio]
+  
+  if(random-float 100.0 < #mutation-ratio)[ 
+    let rango floor (length content * #mutation-ratio) / 10
+    let mitad floor length content / 2
+    let sp floor mitad  - rango / 2
+    let fp floor mitad + rango / 2
+    
+    let p1 sublist content 0 sp  
+    let p2 sublist content fp length content
+    let shuf sublist content sp fp
+    
+    set content (sentence p1 shuffle shuf p2)
+  ]
+end
+to AI:mutate-inversion[#mutation-ratio]
+  
+  if(random-float 100.0 < #mutation-ratio)[ 
+    let rango floor (length content * #mutation-ratio) / 10
+    let mitad floor length content / 2
+    let sp floor mitad  - rango / 2
+    let fp floor mitad + rango / 2
+    
+    let p1 sublist content 0 sp  
+    let p2 sublist content fp length content
+    let rev sublist content sp fp
+    
+    set content (sentence p1 reverse rev p2)
+  ]
+end
+;-------------------------------------------------------------------------------------------------------------------------
+; Procedure to create the new generation from the current one.
+; It selects (from fitness) the individuals to reproduce by crossover (sexual)
+; and by clonation (asexual). After that, it mutates randomly the new DNA 
+; sequences. The new generation replace the old one.
+
+to AI:Create-next-generation [#population #crossover-ratio #mutation-ratio]
+  
+  ; Start making a copy of the current pool
+  let old-generation AI:individuals with [true]
+  
+  ;natural seleccion
+  if natural-selecion? [natural-selecion #population]
+  
+  ; Decide how many crossover will be made (in each crossover 2 new individuals
+  ; will be created)
+  let number-crossovers  (floor (#population * #crossover-ratio / 100 / 2))
+
+  ; Make Crossovers
+  repeat number-crossovers
+  [
+    ; Tournament 3 selection: we take 3 random individuals and choose the best 
+    ; of them. Selectors will be the parents of the new spring.
+
+    ;----------------------------metodos-de-seleccion----------------------------
+    let fathers[]
+    
+    if metodo-de-seleccion = "elitist" [
+      set fathers AI:Select-elitist old-generation]
+    
+    if metodo-de-seleccion = "range" [
+      set fathers AI:Select-rango old-generation]
+    
+    if metodo-de-seleccion = "rulette" [
+      set fathers AI:Select-ruleta old-generation]
+    
+    if metodo-de-seleccion = "natural" [
+      set fathers AI:Select-natural old-generation]
+    
+    ;------------------------------------------------------------------------------
+    
+    let father1 (item 0 fathers)
+    let father2 (item 1 fathers)
+
+    ;----------------------------metodos-de-cruzamiento----------------------------
+    let content-child[]
+    
+    if metodo-de-cruzamiento = "single-point" [
+     set content-child AI:crossover-single-point ([content] of father1) ([content] of father2)]
+    
+    if metodo-de-cruzamiento = "uniform" [
+     set content-child AI:crossover-uniform ([content] of father1) ([content] of father2)]
+    
+        if metodo-de-cruzamiento = "uniform media" [
+     set content-child AI:crossover-uniform-media ([content] of father1) ([content] of father2)]
+
+    if metodo-de-cruzamiento = "opt2" [
+     set content-child AI:crossover-opt2 ([content] of father1) ([content] of father2)]
+    
+    if metodo-de-cruzamiento = "two-point" [
+     set content-child AI:Crossover-two-point ([content] of father1) ([content] of father2)]
+    
+    ;------------------------------------------------------------------------------
+    
+    ; From 2 parents we create 2 children
+    ask father1 [ hatch-AI:individuals 1 [ set content item 0 content-child ] ]
+    ask father2 [ hatch-AI:individuals 1 [ set content item 1 content-child ] ]
+  ]
+
+  
+
+  ; The rest of pool will be cloned directly from good individuals of the
+  ; previous generation
+  repeat (#population - number-crossovers * 2)
+  [
+    ask max-one-of (n-of 3 old-generation) [fitness]
+      [ hatch-AI:individuals 1 ]
+  ]
+
+  ; Remove the previous generation
+  ask old-generation [ die ]
+
+  ; Mutate the new spring and compute the new fitness
+  ask AI:individuals
+  [
+    ;----------------------------metodos-de-mutacion----------------------------
+
+    if metodo-de-mutacion = "flip" [AI:mutate-flip #mutation-ratio]
+    if metodo-de-mutacion = "two-flip" [AI:mutate-two-flip #mutation-ratio]    
+    if metodo-de-mutacion = "scramble" [AI:mutate-scramble #mutation-ratio]
+    if metodo-de-mutacion = "inversion" [AI:mutate-inversion #mutation-ratio]
+    if metodo-de-mutacion = "opt2" [AI:mutate-opt2 #mutation-ratio]
+    
+    ;------------------------------------------------------------------------------   
+    AI:Compute-fitness
+  ]
+end
+
+;-------------------------------------------------- natural seleccion por 2opt --------------------------------------------------
+
+to natural-selecion [#population]
+  let old-generation AI:individuals with [true]
+  let p 30 ; eso a cambiar segun lo que queremos
+  let num-max-a-eliminar (#population * p) / 100  
+  let r 0
+  let epsilon 0.000001
+  let diff 0
+  let individual-sorted sort-on [fitness] old-generation  ; ordenamos los individuos por fitness ascendente
+  let fitness-before 1000
+  
+  foreach individual-sorted [ ; por todos los individuos de esta lista ordenada
+    indi -> 
+    ask indi[
+      if (r < num-max-a-eliminar) [  ; si no hemos eliminado demasiado antes
+        set diff fitness-before - fitness  ; calculamos la diffencia entre su fitness y el siguiente
+        if (diff < epsilon and diff != 0)[  ; si este differencia es mas pequena que epsilon
+          set r r + 1
+          die  ; eliminamos uno de las dos
+         ]
+      ] 
+      set fitness-before fitness
+    ]
+  ]
+end
+
+;------------------------------------------------------------------------------------------------------
+; We provide some auxiliary procedures that calculate the diversity of the pool
+;  (using the Hamming distance between all individual pairs)
+
+; Provided diversity is the average of Hamming distances between all pairs 
+; in the population.
+to-report AI:diversity
+  let distances []
+  ask AI:individuals [
+    let c1 content
+    ask AI:individuals with [self > myself] [
+      set distances fput (AI:distance content c1) distances
+    ]
+  ]
+  report mean distances
+end
+to-report AI:distance [c1 c2]
+  report hamming-distance c1 c2
+end
+
+; Hamming Distance between two lists is the proportion of positions they 
+; differ.
+to-report hamming-distance [c1 c2]
+  report (length remove true (map [[x1 x2] -> x1 = x2] c1 c2)) / (length c1)
+end
+
+;metodo auxiliar que calcula la distancia euclidea
+to-report compute-weight[ x y ]
+  let a one-of cities with [id = x]
+  let b one-of cities with [id = y]
+
+  let x1 [pxcor] of a
+  let x2 [pxcor] of b
+  let y1 [pycor] of a
+  let y2 [pycor] of b
+
+  report sqrt ( ((x2 - x1)^ 2) + ((y2 - y1)^ 2))
+end
+
+;suma todas las aristas de la lista
+to-report todos-weight[ lista ]
+  let res 0
+
+  foreach lista[
+    i ->
+    if i = ( N - 1 ) [ set res res + compute-weight (item i lista) (item 0 lista) ]
+    if i != ( N - 1 ) [ set res res + compute-weight (item i lista) (item (i + 1) lista) ]
+  ]
+
+  report res
+end

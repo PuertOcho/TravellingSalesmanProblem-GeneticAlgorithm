@@ -1,0 +1,123 @@
+
+;Genera el mundo de N ciudades en forma de circulo
+to setup-cities-circulo
+  set N NCities
+    create-cities N
+  ask cities [
+    set size 0.25
+  ]
+  layout-circle cities (world-width / 2 - 1)
+end
+
+;Genera un mundo con N ciudades aleatorias
+to setup-cities-random
+  set N NCities
+    create-cities N
+  ask cities [
+    setxy random-xcor random-ycor
+    set size 0.25
+  ]
+end
+
+
+;Genera un mundo de 5x5 ciudades
+to setup-cities-malla-puntos
+  set N 25
+  
+  ask patches[
+  sprout-cities 1 ]
+  
+  ask cities[
+    
+    if xcor mod 3 = 0[die ]
+    if xcor mod 3 = 1[die ]
+    
+    if ycor mod 3 = 0[die ]
+    if ycor mod 3 = 1[die ]
+  ]
+ 
+end 
+
+; creamos una lista de coordenadas de ciudades entre 2 ciudades A y B
+; y = ax + b 
+to-report create-line-of-cities[xA yA xB yB ]
+  let l (list )
+  let a ( yB - yA ) / (xB - xA)
+  let b -1 * a * xA + yA
+  
+  let paso 0.7  ; paso entre los ciudades
+  let i min (list xA xB)
+  while [i < max (list xA xB) ] [
+    set l lput (list i (a * i + b)) l
+    set i (i + paso)
+  ]
+  report l
+end
+
+to setup-cities-Y
+  clear-all
+  let width world-width - 1
+  let xA  0.1 * width 
+  let yA  width - 0.1 * width 
+  create-cities 4
+  
+  ask city 0[  ; ciudad arriba a la izquierda
+    set xcor xA
+    set ycor yA
+  ]
+  ask city 1[   ; ciudad arriba a la derecha
+    set xcor yA 
+    set ycor yA
+  ]
+  ask city 2[   ; ciudad abajo
+    set xcor width / 2
+    set ycor xA
+  ]
+  ask city 3[  ; ciudad abajo 
+    set xcor width / 2
+    set ycor width / 2
+  ]
+  
+  let number 4
+  foreach create-line-of-cities xA yA (width / 2) (width / 2) [  ; linea de ciudades entre 0 y 3
+    p ->
+    create-cities 1
+    ask city number[
+      set xcor first p
+      set ycor last p
+    ]
+    set number (number + 1)
+  ]
+  
+  foreach create-line-of-cities (width / 2) (width / 2) yA yA [  ; linea de ciudades entre 2 y 1
+    p ->
+    create-cities 1
+    ask city number[
+      set xcor first p
+      set ycor last p
+    ]
+    set number (number + 1)
+  ]
+  
+  
+  let linea-vertical (list )
+  let paso 0.7  ; paso entre los ciudades
+  let y xA
+  while [y < width / 2 ] [
+    set linea-vertical lput (list (width / 2) y) linea-vertical
+    set y (y + paso)
+  ]
+  foreach linea-vertical [  ; linea vertical
+    p ->
+    create-cities 1
+    ask city number[
+      set xcor first p
+      set ycor last p
+    ]
+    set number (number + 1)
+  ] 
+  set N number - 1
+end
+
+
+
