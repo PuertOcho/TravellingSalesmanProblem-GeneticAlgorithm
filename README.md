@@ -60,8 +60,6 @@ Comprobamos cada par de aristas, por ejemplo, ab y cd. Si ab + cd > ac + bd se m
    
          - **`AI:Crossover-opt2 [c1 c2]`**: Este método realiza un cruzamiento del contenido de los individuos que se le pasan como entrada , para explicar el cruzamiento nos apoyaremos en la siguiente figura:
    
-           ![image-20191214190548175](C:\Users\Sergio\AppData\Roaming\Typora\typora-user-images\image-20191214190548175.png)
-   
            Supongamos que los cromosomas de los padres son ***ga* = (D; H; B; A; C; F; G; E) *y* *gb* = (*B;* C; D; G; H; F; E; A)**. Primero, elije una ciudad al azar. En este ejemplo, se elige la ciudad C. Entonces x = *4*  e  *y* = *1*  porque  *a4*  *=* C y *b1* = C respectivamente. Ahora el hijo *es (**C**).*
    
            Luego, recoja las ciudades de los padres alternativamente. Comience con *a3*  (ciudad A) porque x =4 - 1= 3,  y luego *b2* (ciudad D) porque y= 1 + 1= 2.  El hijo se convierte en g = (**A; C; D**).
