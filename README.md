@@ -56,9 +56,9 @@ Estas candidatas prometedoras se conservan y se les permite reproducirse. Se rea
          
 Comprobamos cada par de aristas, por ejemplo, ab y cd. Si ab + cd > ac + bd se mantiene, los mejoramos de la misma manera que se muestra en la Fig. 1. En realidad, si tanto ac > ab como bd > cd se mantienen, entonces no es necesario comprobar las aristas. Por lo tanto, podemos saltarnos los pares cuyas aristas estén muy alejadas entre sí.
    
-         Repetimos los procedimientos descritos anteriormente hasta que no se puedan hacer más mejoras.
+   - 3.3) Repetimos los procedimientos descritos anteriormente hasta que no se puedan hacer más mejoras.
    
-         - **`AI:Crossover-opt2 [c1 c2]`**: Este método realiza un cruzamiento del contenido de los individuos que se le pasan como entrada , para explicar el cruzamiento nos apoyaremos en la siguiente figura:
+     - **`AI:Crossover-opt2 [c1 c2]`**: Este método realiza un cruzamiento del contenido de los individuos que se le pasan como entrada , para explicar el cruzamiento nos apoyaremos en la siguiente figura:
    
            Supongamos que los cromosomas de los padres son ***ga* = (D; H; B; A; C; F; G; E) *y* *gb* = (*B;* C; D; G; H; F; E; A)**. Primero, elije una ciudad al azar. En este ejemplo, se elige la ciudad C. Entonces x = *4*  e  *y* = *1*  porque  *a4*  *=* C y *b1* = C respectivamente. Ahora el hijo *es (**C**).*
    
@@ -70,7 +70,7 @@ Comprobamos cada par de aristas, por ejemplo, ab y cd. Si ab + cd > ac + bd se m
    
            Después, añadimos el resto de las ciudades, es decir, E y F, al hijo en el orden aleatorio. Finalmente el hijo es g = (**H; B; A; C; D; G; F; E**).
          
-       - **`#crossover-ratio`** : % de cruzamientos que se harán en cada iteración
+     - **`#crossover-ratio`** : % de cruzamientos que se harán en cada iteración
    
 4. Los pasos 2 y 3 anteriores se repiten hasta llegar a un número de iteraciones, y el individuo que se da como resultado es el de la última iteración;
 
@@ -82,6 +82,13 @@ Por otro lado, para la posible representación es necesario la implementación d
 - **`setupWorld.nls`**: Archivo que contiene código de algunos modelos de ejemplo para representar posibles recorridos del viajante y poder calcular mediante el algoritmo el camino óptimo que debería realizar el viajante.
 
 
+# Ejemplo 1: Mundo aleatorio, metodo de selección elitista
+
+![](images/TSPView2.gif)
+
+# Ejemplo 2: Mundo en malla de puntos, metodo de selección natural
+
+![](images/TSPView1.gif)
 
 
 
