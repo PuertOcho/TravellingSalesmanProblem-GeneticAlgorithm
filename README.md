@@ -58,17 +58,7 @@ Comprobamos cada par de aristas, por ejemplo, ab y cd. Si ab + cd > ac + bd se m
    
    - 3.3) Repetimos los procedimientos descritos anteriormente hasta que no se puedan hacer más mejoras.
    
-     - **`AI:Crossover-opt2 [c1 c2]`**: Este método realiza un cruzamiento del contenido de los individuos que se le pasan como entrada , para explicar el cruzamiento nos apoyaremos en la siguiente figura:
-   
-           Supongamos que los cromosomas de los padres son ***ga* = (D; H; B; A; C; F; G; E) *y* *gb* = (*B;* C; D; G; H; F; E; A)**. Primero, elije una ciudad al azar. En este ejemplo, se elige la ciudad C. Entonces x = *4*  e  *y* = *1*  porque  *a4*  *=* C y *b1* = C respectivamente. Ahora el hijo *es (**C**).*
-   
-           Luego, recoja las ciudades de los padres alternativamente. Comience con *a3*  (ciudad A) porque x =4 - 1= 3,  y luego *b2* (ciudad D) porque y= 1 + 1= 2.  El hijo se convierte en g = (**A; C; D**).
-   
-           De la misma manera, se agrega *a2*  (ciudad  B), *b3* (ciudad G),  *a1* (ciudad  H),  y el hijo se convierte en  g = (**H; B; A; C; D; G**).  Ahora la siguiente ciudad es *b4* = H  y la ciudad H ya ha aparecido en el hijo (recuerde que el vendedor no puede visitar la misma ciudad dos veces), así que no podemos añadir más ciudades del padre gb.
-   
-           Por lo tanto, añadiremos ciudades del padre ga. La siguiente ciudad es a0  = D, pero D ya se usa. Por lo tanto, tampoco podemos añadir ciudades  del padre ga.
-   
-           Después, añadimos el resto de las ciudades, es decir, E y F, al hijo en el orden aleatorio. Finalmente el hijo es g = (**H; B; A; C; D; G; F; E**).
+     - **`AI:Crossover-opt2 [c1 c2]`**: Este método realiza un cruzamiento del contenido de los individuos que se le pasan como entrada.
          
      - **`#crossover-ratio`** : % de cruzamientos que se harán en cada iteración
    
